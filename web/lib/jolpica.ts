@@ -1,0 +1,271 @@
+/**
+ * Thin Jolpica F1 (Ergast-compatible) wrapper.
+ * Used for the data the lightsout-api backend doesn't expose:
+ *   - per-race results / qualifying / fastest laps
+ *   - canonical driver / constructor / circuit identifiers
+ *
+ * Free, no API key, season-scoped.
+ */
+
+const JOLPICA_BASE = "https://api.jolpi.ca/ergast/f1";
+const SEASON = process.env.NEXT_PUBLIC_SEASON ?? "2026";
+
+import type { CalendarResponse, ConstructorStanding, DriverStanding } from "./types";
+
+interface MRData<T> {
+  MRData: T;
+}
+
+interface Location {
+  lat: string;
+  long: string;
+  locality: string;
+  country: string;
+}
+
+export interface JolpicaCircuit {
+  circuitId: string;
+  url: string;
+  circuitName: string;
+  Location: Location;
+}
+
+export interface JolpicaDriver {
+  driverId: string;
+  permanentNumber?: string;
+  code?: string;
+  url: string;
+  givenName: string;
+  familyName: string;
+  dateOfBirth: string;
+  nationality: string;
+}
+
+export interface JolpicaConstructor {
+  constructorId: string;
+  url: string;
+  name: string;
+  nationality: string;
+}
+
+export interface JolpicaRaceResult {
+  number: string;
+  position: string;
+  positionText: string;
+  points: string;
+  grid: string;
+  laps: string;
+  status: string;
+  Driver: JolpicaDriver;
+  Constructor: JolpicaConstructor;
+  Time?: { millis?: string; time: string };
+  FastestLap?: {
+    rank: string;
+    lap: string;
+    Time: { time: string };
+    AverageSpeed?: { units: string; speed: string };
+  };
+}
+
+export interface JolpicaQualifyingResult {
+  number: string;
+  position: string;
+  Driver: JolpicaDriver;
+  Constructor: JolpicaConstructor;
+  Q1?: string;
+  Q2?: string;
+  Q3?: string;
+}
+
+export interface JolpicaRace {
+  season: string;
+  round: string;
+  url: string;
+  raceName: string;
+  Circuit: JolpicaCircuit;
+  date: string;
+  time?: string;
+  Results?: JolpicaRaceResult[];
+  SprintResults?: JolpicaRaceResult[];
+  QualifyingResults?: JolpicaQualifyingResult[];
+}
+
+interface RaceTable {
+  season: string;
+  round?: string;
+  Races: JolpicaRace[];
+}
+
+async function jget<T>(path: string, revalidate: number): Promise<T | null> {
+  try {
+    const res = await fetch(`${JOLPICA_BASE}${path}`, {
+      next: { revalidate },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as MRData<T>;
+    return data.MRData;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every page of a season-wide race endpoint, merged by round. Jolpica caps
+ * `limit` at 100 rows and splits a race's results across pages, so rows for
+ * the same round are concatenated. Returns null if any page fails, so callers
+ * never chart a partial season as if it were complete.
+ */
+async function seasonRaces(
+  path: "results" | "sprint",
+  key: "Results" | "SprintResults",
+  season: string,
+): Promise<JolpicaRace[] | null> {
+  const byRound = new Map<string, JolpicaRace>();
+  for (let offset = 0; offset < 2000; offset += 100) {
+    const data = await jget<{ total: string; RaceTable: RaceTable }>(
+      `/${season}/${path}.json?limit=100&offset=${offset}`,
+      3_600,
+    );
+    if (!data) return null;
+    for (const race of data.RaceTable.Races) {
+      const prev = byRound.get(race.round);
+      if (prev) prev[key] = [...(prev[key] ?? []), ...(race[key] ?? [])];
+      else byRound.set(race.round, { ...race, [key]: [...(race[key] ?? [])] });
+    }
+    if (offset + 100 >= Number(data.total)) break;
+  }
+  return [...byRound.values()].sort((a, b) => Number(a.round) - Number(b.round));
+}
+
+/** Grand Prix classifications for every completed round of the season. */
+export async function getSeasonResults(season = SEASON): Promise<JolpicaRace[] | null> {
+  return seasonRaces("results", "Results", season);
+}
+
+/** Sprint classifications (sprint weekends only). */
+export async function getSeasonSprints(season = SEASON): Promise<JolpicaRace[] | null> {
+  return seasonRaces("sprint", "SprintResults", season);
+}
+
+export async function getSeasonCalendar(): Promise<CalendarResponse | null> {
+  const data = await jget<{ RaceTable: RaceTable }>(`/${SEASON}.json?limit=100`, 1800);
+  if (!data?.RaceTable.Races.length) return null;
+  return { season: Number(SEASON), races: data.RaceTable.Races.map((race) => ({
+    season: Number(race.season), round: Number(race.round), race_name: race.raceName,
+    circuit: race.Circuit.circuitName, country: race.Circuit.Location.country,
+    race_date: race.date, race_time: race.time ?? null, is_completed: false, is_next: false, has_sprint: "Sprint" in race,
+  })) };
+}
+
+export async function getSeasonDriverStandings(): Promise<DriverStanding[] | null> {
+  const data = await jget<{ StandingsTable: { StandingsLists: { DriverStandings: {
+    position: string; points: string; wins: string; Driver: JolpicaDriver; Constructors: JolpicaConstructor[];
+  }[] }[] } }>(`/${SEASON}/driverStandings.json?limit=100`, 600);
+  const rows = data?.StandingsTable.StandingsLists[0]?.DriverStandings;
+  return rows?.map((row) => ({
+    position: Number(row.position), points: Number(row.points), wins: Number(row.wins),
+    driver_code: row.Driver.code ?? row.Driver.familyName.slice(0, 3).toUpperCase(),
+    driver_name: `${row.Driver.givenName} ${row.Driver.familyName}`, team: row.Constructors[0]?.name ?? "",
+  })) ?? null;
+}
+
+export async function getSeasonConstructorStandings(): Promise<ConstructorStanding[] | null> {
+  const data = await jget<{ StandingsTable: { StandingsLists: { ConstructorStandings: {
+    position: string; points: string; wins: string; Constructor: JolpicaConstructor;
+  }[] }[] } }>(`/${SEASON}/constructorStandings.json?limit=100`, 600);
+  const rows = data?.StandingsTable.StandingsLists[0]?.ConstructorStandings;
+  return rows?.map((row) => ({
+    position: Number(row.position), points: Number(row.points), wins: Number(row.wins), team: row.Constructor.name,
+  })) ?? null;
+}
+
+/* ---------------- Drivers / Constructors ---------------- */
+
+export async function getDrivers(season = SEASON): Promise<JolpicaDriver[]> {
+  const data = await jget<{ DriverTable: { Drivers: JolpicaDriver[] } }>(
+    `/${season}/drivers.json?limit=100`,
+    86_400
+  );
+  return data?.DriverTable.Drivers ?? [];
+}
+
+export async function getConstructors(season = SEASON): Promise<JolpicaConstructor[]> {
+  const data = await jget<{ ConstructorTable: { Constructors: JolpicaConstructor[] } }>(
+    `/${season}/constructors.json?limit=100`,
+    86_400
+  );
+  return data?.ConstructorTable.Constructors ?? [];
+}
+
+/* ---------------- Race results / qualifying / circuits ---------------- */
+
+export async function getRaceResults(
+  round: number,
+  season = SEASON
+): Promise<JolpicaRace | null> {
+  const data = await jget<{ RaceTable: RaceTable }>(
+    `/${season}/${round}/results.json?limit=100`,
+    3_600
+  );
+  return data?.RaceTable.Races[0] ?? null;
+}
+
+export async function getQualifying(
+  round: number,
+  season = SEASON
+): Promise<JolpicaRace | null> {
+  const data = await jget<{ RaceTable: RaceTable }>(
+    `/${season}/${round}/qualifying.json?limit=100`,
+    3_600
+  );
+  return data?.RaceTable.Races[0] ?? null;
+}
+
+export async function getCircuit(
+  round: number,
+  season = SEASON
+): Promise<JolpicaCircuit | null> {
+  const data = await jget<{ CircuitTable: { Circuits: JolpicaCircuit[] } }>(
+    `/${season}/${round}/circuits.json`,
+    86_400
+  );
+  return data?.CircuitTable.Circuits[0] ?? null;
+}
+
+/* ---------------- Driver-scoped helpers ---------------- */
+
+export async function getDriverResults(
+  driverId: string,
+  season = SEASON
+): Promise<JolpicaRace[]> {
+  const data = await jget<{ RaceTable: RaceTable }>(
+    `/${season}/drivers/${driverId}/results.json?limit=50`,
+    3_600
+  );
+  return data?.RaceTable.Races ?? [];
+}
+
+/* ---------------- Constructor-scoped helpers ---------------- */
+
+export async function getConstructorResults(
+  constructorId: string,
+  season = SEASON
+): Promise<JolpicaRace[]> {
+  const data = await jget<{ RaceTable: RaceTable }>(
+    `/${season}/constructors/${constructorId}/results.json?limit=100`,
+    3_600
+  );
+  return data?.RaceTable.Races ?? [];
+}
+
+export async function getConstructorDrivers(
+  constructorId: string,
+  season = SEASON
+): Promise<JolpicaDriver[]> {
+  const data = await jget<{ DriverTable: { Drivers: JolpicaDriver[] } }>(
+    `/${season}/constructors/${constructorId}/drivers.json`,
+    86_400
+  );
+  return data?.DriverTable.Drivers ?? [];
+}

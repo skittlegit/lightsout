@@ -1,0 +1,224 @@
+import type { TeamId } from "./types";
+
+/* ------------------------------------------------------------------ */
+/* Numeric formatters                                                 */
+/* ------------------------------------------------------------------ */
+
+export function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
+export function pct(p: number): string {
+  return `${(p * 100).toFixed(1)}%`;
+}
+
+export function pctShort(p: number): string {
+  return `${Math.round(p * 100)}%`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Editorial helpers                                                  */
+/* ------------------------------------------------------------------ */
+
+/** "Australian Grand Prix" -> { head: "Australian", tail: "Grand Prix" } */
+export function splitRaceName(name: string): { head: string; tail: string } {
+  const m = name.match(/^(.*?)\s+(Grand Prix|GP)$/i);
+  if (m) return { head: m[1], tail: m[2] };
+  return { head: name, tail: "" };
+}
+
+/** "Mar 14" or "Mar 14–16" — backend only gives one date so default = single day. */
+export function formatRaceDate(iso: string): string {
+  const d = new Date(iso + (iso.length === 10 ? "T00:00:00Z" : ""));
+  const month = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(d);
+  return `${month} ${d.getUTCDate()}`;
+}
+
+/**
+ * Race start as a UTC instant. Jolpica times are UTC ("12:00:00Z"); fall back
+ * to 13:00 UTC when a snapshot predates race_time. Night races start hours
+ * away from 13:00, so the real time matters for countdowns.
+ */
+export function raceStartISO(raceDate: string, raceTime?: string | null): string {
+  const hhmm = raceTime?.match(/^\d{2}:\d{2}/)?.[0] ?? "13:00";
+  return `${raceDate.slice(0, 10)}T${hhmm}:00Z`;
+}
+
+/** Whole days from `now` until an ISO date (date-only). Negative once past. */
+export function daysUntil(iso: string, now: Date = new Date()): number {
+  const target = new Date(iso.slice(0, 10) + "T00:00:00Z").getTime();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((target - today) / 86400000);
+}
+
+/** Short human label for a day count: "Today", "Tomorrow", "In 12 days". */
+export function countdownLabel(days: number): string {
+  if (days < 0) return "Underway";
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  return `In ${days} days`;
+}
+
+export function formatRaceFullDate(iso: string): string {
+  const d = new Date(iso + (iso.length === 10 ? "T00:00:00Z" : ""));
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(d);
+}
+
+/** "Andrea Kimi Antonelli" -> "K. Antonelli", "Max Verstappen" -> "M. Verstappen" */
+export function abbreviateName(full: string): string {
+  const parts = full.trim().split(/\s+/);
+  if (parts.length < 2) return full;
+  const last = parts[parts.length - 1];
+  const firstInitialSource = parts.length >= 3 ? parts[1] : parts[0];
+  return `${firstInitialSource.charAt(0)}. ${last}`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Team display-string -> id mapping                                  */
+/* ------------------------------------------------------------------ */
+
+/** Backend gives team display strings. Map to a stable TeamId for color/branding. */
+export function teamId(team: string): TeamId {
+  const t = team.toLowerCase();
+  if (t.includes("mercedes")) return "mercedes";
+  if (t.includes("ferrari")) return "ferrari";
+  if (t.includes("red bull")) return "red_bull";
+  if (t.includes("mclaren")) return "mclaren";
+  if (t.includes("aston")) return "aston_martin";
+  if (t.includes("alpine")) return "alpine";
+  if (t.includes("williams")) return "williams";
+  if (t.includes("rb ") || t === "rb" || t.includes("racing bulls")) return "racing_bulls";
+  if (t.includes("audi") || t.includes("sauber") || t.includes("kick")) return "audi";
+  if (t.includes("haas")) return "haas";
+  if (t.includes("cadillac")) return "cadillac";
+  return "haas";
+}
+
+const TEAM_HEX: Record<TeamId, string> = {
+  mercedes: "#27F4D2",
+  ferrari: "#E80020",
+  red_bull: "#3671C6",
+  mclaren: "#FF8000",
+  aston_martin: "#229971",
+  alpine: "#FF87BC",
+  williams: "#1868DB",
+  racing_bulls: "#6692FF",
+  audi: "#52E252",
+  haas: "#9C9FA2",
+  cadillac: "#C9B47B",
+};
+
+/** Accepts either a TeamId or a backend team display string. */
+export function teamColor(idOrName: TeamId | string): string {
+  if ((TEAM_HEX as Record<string, string>)[idOrName]) {
+    return TEAM_HEX[idOrName as TeamId];
+  }
+  return TEAM_HEX[teamId(idOrName)];
+}
+
+/** Short team display label that fits tight rows. */
+export function teamShort(team: string): string {
+  const id = teamId(team);
+  return {
+    mercedes: "Mercedes",
+    ferrari: "Ferrari",
+    red_bull: "Red Bull",
+    mclaren: "McLaren",
+    aston_martin: "Aston Martin",
+    alpine: "Alpine",
+    williams: "Williams",
+    racing_bulls: "Racing Bulls",
+    audi: "Audi",
+    haas: "Haas",
+    cadillac: "Cadillac",
+  }[id];
+}
+
+/* ------------------------------------------------------------------ */
+/* Country display                                                    */
+/* ------------------------------------------------------------------ */
+
+const COUNTRY_CODES: Record<string, string> = {
+  Australia: "AUS",
+  China: "CHN",
+  Japan: "JPN",
+  Bahrain: "BHR",
+  "Saudi Arabia": "KSA",
+  USA: "USA",
+  "United States": "USA",
+  Canada: "CAN",
+  Monaco: "MON",
+  Spain: "ESP",
+  Austria: "AUT",
+  UK: "GBR",
+  "United Kingdom": "GBR",
+  Britain: "GBR",
+  Belgium: "BEL",
+  Hungary: "HUN",
+  Netherlands: "NED",
+  Italy: "ITA",
+  Azerbaijan: "AZE",
+  Singapore: "SGP",
+  Mexico: "MEX",
+  Brazil: "BRA",
+  UAE: "UAE",
+  "United Arab Emirates": "UAE",
+  Qatar: "QAT",
+};
+
+export function countryCode(country: string): string {
+  return COUNTRY_CODES[country] ?? country.slice(0, 3).toUpperCase();
+}
+
+/* ------------------------------------------------------------------ */
+/* Heatmap color (gamma-corrected surface -> F1 deep red)             */
+/* Uses CSS vars + color-mix so the scale adapts to light/dark theme:  */
+/* low probability blends into the current surface, high stays red.    */
+/* ------------------------------------------------------------------ */
+
+function heatmapT(p: number): number {
+  return Math.pow(Math.max(0, Math.min(1, p)), 0.6);
+}
+
+/** Cell fill: transparent below 2% so the long tail doesn't muddy the grid. */
+export function heatmapColor(p: number): string {
+  if (p < 0.02) return "transparent";
+  const t = Math.min(1, heatmapT(p) * 1.25);
+  return `color-mix(in srgb, var(--color-f1) ${(t * 100).toFixed(1)}%, var(--color-paper-deep))`;
+}
+
+export function heatmapTextColor(p: number): string {
+  // Light text once the cell is red-dominant; otherwise the theme's ink.
+  return heatmapT(p) * 1.25 >= 0.55 ? "#ffffff" : "var(--color-ink)";
+}
+
+/* ------------------------------------------------------------------ */
+/* Misc                                                                */
+/* ------------------------------------------------------------------ */
+
+export function relativeTimeUpper(iso: string, now: Date = new Date()): string {
+  const t = new Date(iso).getTime();
+  const diffMs = now.getTime() - t;
+  const sec = Math.max(0, Math.floor(diffMs / 1000));
+  if (sec < 45) return "JUST NOW";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} MIN AGO`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} HR${hr === 1 ? "" : "S"} AGO`;
+  const day = Math.floor(hr / 24);
+  return `${day} DAY${day === 1 ? "" : "S"} AGO`;
+}
+
+/**
+ * A team colour darkened enough to use as text on the light page — raw
+ * Mercedes cyan or Haas grey on off-white fails contrast.
+ */
+export function inkOf(color: string): string {
+  return `color-mix(in srgb, ${color} 60%, #15151e)`;
+}
