@@ -34,6 +34,8 @@ podium / points odds board, and the full position matrix.
 
 ## Getting started
 
+Run from `web/` (this app lives in the LightsOut monorepo; the API is in `../api`). Vercel builds it with Root Directory `web`.
+
 ```bash
 cp .env.local.example .env.local   # then adjust values
 npm install
@@ -86,7 +88,7 @@ lib/
 
 ## Conventions
 
-- This repo runs a Next.js version newer than most training data — read
+- This app runs a Next.js version newer than most training data — read
   `node_modules/next/dist/docs/` before changing framework-facing code
   (see `AGENTS.md`).
 - Caching uses the pre-Cache-Components model: `fetch` with
