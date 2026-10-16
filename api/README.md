@@ -25,6 +25,8 @@ Prediction responses include the `weather` used and its `source`.
 
 ## Quick start
 
+Run from `api/`.
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate          # Windows
@@ -66,11 +68,11 @@ uvicorn app.main:app --reload
 
 ## Deployment (Render, free tier)
 
-- Blueprint: `render.yaml` — Docker build from `Dockerfile`, health check on `/health`, `plan: free`
+- Blueprint: `render.yaml` at the repo root — Docker build from `api/Dockerfile` with `api/` as the context, health check on `/health`, `plan: free`; a build filter on `api/**` skips web-only commits
 - Set `CORS_ORIGINS` and `RETRAIN_API_KEY` when prompted on first blueprint apply
 - Model artifacts (`ml/artifacts/*.pkl`) and training parquets are committed, so the image is self-contained; the FastF1 cache is ephemeral (no persistent disk on free tier)
 - If artifacts fail to load the API still serves standings/calendar; predictions return `model_unavailable`
-- Free instances sleep after ~15 min idle (first request after that takes ~1 min to cold-start) and can't run in-process retraining, so `AUTO_RETRAIN_CRON=off` — the weekly retrain runs in GitHub Actions instead (`.github/workflows/retrain.yml`), which commits fresh artifacts and triggers a Render auto-deploy
+- Free instances sleep after ~15 min idle (first request after that takes ~1 min to cold-start) and can't run in-process retraining, so `AUTO_RETRAIN_CRON=off` — the weekly retrain runs in GitHub Actions instead (`.github/workflows/retrain.yml` at the repo root), which commits fresh artifacts and triggers a Render auto-deploy
 - The weekend quali probe still runs in-process whenever the instance happens to be awake; stale pre-quali predictions otherwise age out via the 6h cache TTL or the next cold start
 
 Calendar and standings update from Jolpica independently of retraining. Point

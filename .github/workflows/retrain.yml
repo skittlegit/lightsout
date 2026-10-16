@@ -16,6 +16,10 @@ concurrency:
   group: retrain
   cancel-in-progress: false
 
+defaults:
+  run:
+    working-directory: api
+
 jobs:
   retrain:
     runs-on: ubuntu-latest
@@ -26,6 +30,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: api/requirements.txt
 
       - name: Restore FastF1 cache
         # Rolling key: the exact key never hits, so the newest previous cache
@@ -33,7 +38,7 @@ jobs:
         # rounds already cached, so weekly runs only fetch the new race.
         uses: actions/cache@v4
         with:
-          path: fastf1_cache
+          path: api/fastf1_cache
           key: fastf1-${{ github.run_id }}
           restore-keys: |
             fastf1-
@@ -69,7 +74,8 @@ jobs:
                      ml/data/training.parquet \
                      ml/data/quali_training.parquet \
                      ml/data/_checkpoint.parquet \
-                     ml/data/_checkpoint_quali.parquet                      ml/data/weather.parquet
+                     ml/data/_checkpoint_quali.parquet \
+                     ml/data/weather.parquet
           if git diff --cached --quiet; then
             echo "No artifact changes — skipping commit"
           else

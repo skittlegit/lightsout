@@ -5,11 +5,18 @@
 # when idle and has 512 MB RAM, so weekly retraining runs in GitHub Actions
 # instead (.github/workflows/retrain.yml) and commits fresh artifacts, which
 # triggers an auto-deploy here.
+#
+# Monorepo: the API lives in api/. Paths are given from the repo root (no
+# rootDir), and the build filter keeps web/-only commits from redeploying.
 services:
   - type: web
     name: lightsout-api
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    buildFilter:
+      paths:
+        - api/**
     plan: free
     # region: singapore  # oregon (default) | ohio | virginia | frankfurt | singapore
     healthCheckPath: /health

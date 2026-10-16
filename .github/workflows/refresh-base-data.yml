@@ -8,6 +8,9 @@ permissions:
 concurrency:
   group: refresh-base-data
   cancel-in-progress: false
+defaults:
+  run:
+    working-directory: web
 jobs:
   refresh:
     runs-on: ubuntu-latest
