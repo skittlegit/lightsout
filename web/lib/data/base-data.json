@@ -1,6 +1,6 @@
 {
   "season": 2026,
-  "fetched_at": "2026-10-27T09:17:52.026Z",
+  "fetched_at": "2026-11-03T11:15:47.868Z",
   "source": "https://lightsout-api.onrender.com/api",
   "calendar": {
     "season": 2026,
@@ -229,8 +229,8 @@
         "country": "Mexico",
         "race_date": "2026-11-01",
         "race_time": "20:00:00Z",
-        "is_next": true,
-        "is_completed": false,
+        "is_next": false,
+        "is_completed": true,
         "has_sprint": false
       },
       {
@@ -241,7 +241,7 @@
         "country": "Brazil",
         "race_date": "2026-11-08",
         "race_time": "17:00:00Z",
-        "is_next": false,
+        "is_next": true,
         "is_completed": false,
         "has_sprint": false
       },
@@ -289,15 +289,15 @@
       "driver_code": "ANT",
       "driver_name": "Andrea Kimi Antonelli",
       "team": "Mercedes",
-      "points": 365,
+      "points": 380,
       "wins": 9
     },
     {
       "position": 2,
-      "driver_code": "RUS",
-      "driver_name": "George Russell",
-      "team": "Mercedes",
-      "points": 242,
+      "driver_code": "VER",
+      "driver_name": "Max Verstappen",
+      "team": "Red Bull",
+      "points": 261,
       "wins": 3
     },
     {
@@ -305,23 +305,23 @@
       "driver_code": "HAM",
       "driver_name": "Lewis Hamilton",
       "team": "Ferrari",
-      "points": 241,
+      "points": 259,
       "wins": 1
     },
     {
       "position": 4,
-      "driver_code": "VER",
-      "driver_name": "Max Verstappen",
-      "team": "Red Bull",
-      "points": 236,
-      "wins": 2
+      "driver_code": "RUS",
+      "driver_name": "George Russell",
+      "team": "Mercedes",
+      "points": 250,
+      "wins": 3
     },
     {
       "position": 5,
       "driver_code": "LEC",
       "driver_name": "Charles Leclerc",
       "team": "Ferrari",
-      "points": 233,
+      "points": 245,
       "wins": 1
     },
     {
@@ -329,7 +329,7 @@
       "driver_code": "NOR",
       "driver_name": "Lando Norris",
       "team": "McLaren",
-      "points": 211,
+      "points": 221,
       "wins": 2
     },
     {
@@ -345,7 +345,7 @@
       "driver_code": "HAD",
       "driver_name": "Isack Hadjar",
       "team": "Red Bull",
-      "points": 105,
+      "points": 107,
       "wins": 0
     },
     {
@@ -353,7 +353,7 @@
       "driver_code": "LAW",
       "driver_name": "Liam Lawson",
       "team": "RB F1 Team",
-      "points": 77,
+      "points": 83,
       "wins": 0
     },
     {
@@ -390,18 +390,18 @@
     },
     {
       "position": 14,
-      "driver_code": "HUL",
-      "driver_name": "Nico Hülkenberg",
+      "driver_code": "BOR",
+      "driver_name": "Gabriel Bortoleto",
       "team": "Audi",
-      "points": 13,
+      "points": 14,
       "wins": 0
     },
     {
       "position": 15,
-      "driver_code": "BOR",
-      "driver_name": "Gabriel Bortoleto",
+      "driver_code": "HUL",
+      "driver_name": "Nico Hülkenberg",
       "team": "Audi",
-      "points": 10,
+      "points": 13,
       "wins": 0
     },
     {
@@ -446,6 +446,14 @@
     },
     {
       "position": 21,
+      "driver_code": "HIR",
+      "driver_name": "Ryo Hirakawa",
+      "team": "Haas F1 Team",
+      "points": 1,
+      "wins": 0
+    },
+    {
+      "position": 22,
       "driver_code": "STR",
       "driver_name": "Lance Stroll",
       "team": "Aston Martin",
@@ -453,7 +461,7 @@
       "wins": 0
     },
     {
-      "position": 22,
+      "position": 23,
       "driver_code": "BOT",
       "driver_name": "Valtteri Bottas",
       "team": "Cadillac F1 Team",
@@ -461,7 +469,7 @@
       "wins": 0
     },
     {
-      "position": 23,
+      "position": 24,
       "driver_code": "PER",
       "driver_name": "Sergio Pérez",
       "team": "Cadillac F1 Team",
@@ -473,31 +481,31 @@
     {
       "position": 1,
       "team": "Mercedes",
-      "points": 607,
+      "points": 630,
       "wins": 12
     },
     {
       "position": 2,
       "team": "Ferrari",
-      "points": 474,
+      "points": 504,
       "wins": 2
     },
     {
       "position": 3,
       "team": "Red Bull",
-      "points": 355,
-      "wins": 2
+      "points": 382,
+      "wins": 3
     },
     {
       "position": 4,
       "team": "McLaren",
-      "points": 355,
+      "points": 365,
       "wins": 2
     },
     {
       "position": 5,
       "team": "RB F1 Team",
-      "points": 102,
+      "points": 108,
       "wins": 0
     },
     {
@@ -509,13 +517,13 @@
     {
       "position": 7,
       "team": "Haas F1 Team",
-      "points": 30,
+      "points": 31,
       "wins": 0
     },
     {
       "position": 8,
       "team": "Audi",
-      "points": 23,
+      "points": 27,
       "wins": 0
     },
     {
