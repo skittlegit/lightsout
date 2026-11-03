@@ -37,6 +37,8 @@ DEFAULT_TEMP_C = 22.0
 _RACE_HOURS = 2  # sample the start hour plus the next two
 _WET_MM = 0.1    # hourly precipitation that counts as a wet hour
 _TIMEOUT = httpx.Timeout(20.0, connect=5.0)
+_ARCHIVE_ATTEMPTS = 3
+_ARCHIVE_BACKOFF_S = 5.0
 
 
 def race_start(race_date: str, race_time: Optional[str]) -> datetime:
@@ -153,6 +155,22 @@ def _schedule(client: httpx.Client, base_url: str, season: int) -> list[dict]:
     return r.json().get("MRData", {}).get("RaceTable", {}).get("Races", [])
 
 
+def _get_archive(client: httpx.Client, params: dict) -> httpx.Response:
+    """GET the archive, retrying timeouts, connection errors and 5xx responses."""
+    for attempt in range(1, _ARCHIVE_ATTEMPTS + 1):
+        try:
+            r = client.get(ARCHIVE_URL, params=params)
+            if r.status_code < 500:
+                return r
+            r.raise_for_status()
+        except (httpx.TransportError, httpx.HTTPStatusError) as e:
+            if attempt == _ARCHIVE_ATTEMPTS:
+                raise
+            log.warning("Open-Meteo attempt %d/%d failed: %s", attempt, _ARCHIVE_ATTEMPTS, e)
+            time.sleep(_ARCHIVE_BACKOFF_S * attempt)
+    raise AssertionError("unreachable")
+
+
 def backfill(seasons: range, path: Path = WEATHER_PATH) -> pd.DataFrame:
     from app.config import get_settings
 
@@ -169,8 +187,14 @@ def backfill(seasons: range, path: Path = WEATHER_PATH) -> pd.DataFrame:
                     continue
                 loc = race["Circuit"]["Location"]
                 start = race_start(race["date"], race.get("time"))
-                r = client.get(ARCHIVE_URL, params=_params(
-                    float(loc["lat"]), float(loc["long"]), start, "temperature_2m,precipitation"))
+                try:
+                    r = _get_archive(client, _params(
+                        float(loc["lat"]), float(loc["long"]), start, "temperature_2m,precipitation"))
+                except (httpx.TransportError, httpx.HTTPStatusError) as e:
+                    # build_dataset re-reads this table every run, so a missing
+                    # race trains on the priors once and is corrected next run.
+                    log.warning("Open-Meteo unavailable (%s) — stopping; rerun to resume", e)
+                    break
                 if r.status_code == 429:
                     log.warning("Open-Meteo rate limit — stopping; rerun to resume")
                     break

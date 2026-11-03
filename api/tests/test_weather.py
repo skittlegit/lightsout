@@ -1,8 +1,11 @@
 import asyncio
+import tempfile
 import unittest
 from datetime import date, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
+import httpx
 import pandas as pd
 
 from ml import weather
@@ -43,6 +46,60 @@ class WeatherTests(unittest.TestCase):
         table = pd.DataFrame([{"season": 2025, "round": 13, "circuit_id": "spa", "rain": 1.0, "temp_c": 17.7}])
         self.assertEqual(weather.lookup(table, 2025, 13), (1.0, 17.7))
         self.assertEqual(weather.lookup(pd.DataFrame(), 2025, 13), (weather.DEFAULT_RAIN, weather.DEFAULT_TEMP_C))
+
+
+class BackfillTests(unittest.TestCase):
+    def _backfill(self, archive):
+        """Run backfill over a two-race 2025 schedule with ``archive`` answering Open-Meteo."""
+        races = [
+            {"season": "2025", "round": str(n), "date": "2025-03-16", "time": "12:00:00Z",
+             "Circuit": {"circuitId": f"c{n}", "Location": {"lat": "1.0", "long": "2.0"}}}
+            for n in (1, 2)
+        ]
+
+        def handler(request):
+            if request.url.host == "archive-api.open-meteo.com":
+                return archive(request)
+            return httpx.Response(200, json={"MRData": {"RaceTable": {"Races": races}}})
+
+        real_client = httpx.Client
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch("ml.weather.httpx.Client", lambda timeout: real_client(transport=httpx.MockTransport(handler), timeout=timeout)), \
+                patch("ml.weather.time.sleep"):
+            path = Path(tmp) / "weather.parquet"
+            frame = weather.backfill(range(2025, 2026), path)
+            return frame, path.exists()
+
+    def test_retries_a_timed_out_archive_read(self):
+        calls = []
+
+        def archive(request):
+            calls.append(request)
+            if len(calls) == 1:
+                raise httpx.ReadTimeout("stalled", request=request)
+            return httpx.Response(200, json=_hourly("2025-03-16", "precipitation", [0.0] * 24))
+
+        frame, _ = self._backfill(archive)
+        self.assertEqual(frame["round"].tolist(), [1, 2])
+        self.assertEqual(len(calls), 3)
+
+    def test_persistent_outage_keeps_fetched_races_instead_of_raising(self):
+        calls = []
+
+        def archive(request):
+            calls.append(request)
+            if len(calls) > 1:
+                raise httpx.ReadTimeout("stalled", request=request)
+            return httpx.Response(200, json=_hourly("2025-03-16", "precipitation", [0.0] * 24))
+
+        frame, saved = self._backfill(archive)
+        self.assertEqual(frame["round"].tolist(), [1])
+        self.assertTrue(saved)
+        self.assertEqual(len(calls), 1 + weather._ARCHIVE_ATTEMPTS)
+
+    def test_client_error_is_not_swallowed(self):
+        with self.assertRaises(httpx.HTTPStatusError):
+            self._backfill(lambda request: httpx.Response(400, json={"reason": "bad request"}))
 
 
 if __name__ == "__main__":
