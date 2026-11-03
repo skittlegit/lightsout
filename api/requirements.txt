@@ -1,17 +1,17 @@
-fastapi==0.142.2
+fastapi==0.162.0
 uvicorn[standard]==0.54.0
-pydantic==2.13.5
-pydantic-settings==2.15.0
+pydantic==2.14.2
+pydantic-settings==2.16.2
 httpx==0.28.1
-fastf1==3.8.3
+fastf1==3.9.2
 lightgbm==4.7.0
 scikit-learn==1.9.1
 scipy==1.18.1
-# fastf1 3.8 still requires pandas<3
+# fastf1 3.9 still requires pandas<3
 pandas==2.3.3
-numpy==2.5.3
+numpy==2.5.4
 joblib==1.6.0
-cachetools==7.2.1
+cachetools==7.2.8
 python-dotenv==1.2.4
-pyarrow==25.0.1
+pyarrow==26.0.1
 apscheduler==3.11.3
