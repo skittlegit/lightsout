@@ -1,6 +1,6 @@
 {
   "season": 2026,
-  "fetched_at": "2026-11-17T12:20:48.262Z",
+  "fetched_at": "2026-11-24T14:10:47.476Z",
   "source": "https://lightsout-api.onrender.com/api",
   "calendar": {
     "season": 2026,
@@ -253,8 +253,8 @@
         "country": "USA",
         "race_date": "2026-11-22",
         "race_time": "04:00:00Z",
-        "is_next": true,
-        "is_completed": false,
+        "is_next": false,
+        "is_completed": true,
         "has_sprint": false
       },
       {
@@ -265,7 +265,7 @@
         "country": "Qatar",
         "race_date": "2026-11-29",
         "race_time": "16:00:00Z",
-        "is_next": false,
+        "is_next": true,
         "is_completed": false,
         "has_sprint": false
       },
@@ -289,7 +289,7 @@
       "driver_code": "ANT",
       "driver_name": "Andrea Kimi Antonelli",
       "team": "Mercedes",
-      "points": 390,
+      "points": 402,
       "wins": 9
     },
     {
@@ -297,47 +297,47 @@
       "driver_code": "VER",
       "driver_name": "Max Verstappen",
       "team": "Red Bull",
-      "points": 279,
-      "wins": 3
+      "points": 304,
+      "wins": 4
     },
     {
       "position": 3,
-      "driver_code": "RUS",
-      "driver_name": "George Russell",
-      "team": "Mercedes",
-      "points": 262,
-      "wins": 3
-    },
-    {
-      "position": 4,
       "driver_code": "HAM",
       "driver_name": "Lewis Hamilton",
       "team": "Ferrari",
-      "points": 261,
+      "points": 267,
       "wins": 1
+    },
+    {
+      "position": 4,
+      "driver_code": "RUS",
+      "driver_name": "George Russell",
+      "team": "Mercedes",
+      "points": 264,
+      "wins": 3
     },
     {
       "position": 5,
-      "driver_code": "LEC",
-      "driver_name": "Charles Leclerc",
-      "team": "Ferrari",
-      "points": 249,
-      "wins": 1
-    },
-    {
-      "position": 6,
       "driver_code": "NOR",
       "driver_name": "Lando Norris",
       "team": "McLaren",
-      "points": 246,
+      "points": 264,
       "wins": 3
+    },
+    {
+      "position": 6,
+      "driver_code": "LEC",
+      "driver_name": "Charles Leclerc",
+      "team": "Ferrari",
+      "points": 250,
+      "wins": 1
     },
     {
       "position": 7,
       "driver_code": "PIA",
       "driver_name": "Oscar Piastri",
       "team": "McLaren",
-      "points": 152,
+      "points": 167,
       "wins": 0
     },
     {
@@ -361,7 +361,7 @@
       "driver_code": "GAS",
       "driver_name": "Pierre Gasly",
       "team": "Alpine F1 Team",
-      "points": 42,
+      "points": 52,
       "wins": 0
     },
     {
@@ -377,7 +377,7 @@
       "driver_code": "COL",
       "driver_name": "Franco Colapinto",
       "team": "Alpine F1 Team",
-      "points": 27,
+      "points": 35,
       "wins": 0
     },
     {
@@ -406,6 +406,14 @@
     },
     {
       "position": 16,
+      "driver_code": "SAI",
+      "driver_name": "Carlos Sainz",
+      "team": "Williams",
+      "points": 11,
+      "wins": 0
+    },
+    {
+      "position": 17,
       "driver_code": "OCO",
       "driver_name": "Esteban Ocon",
       "team": "Haas F1 Team",
@@ -413,18 +421,10 @@
       "wins": 0
     },
     {
-      "position": 17,
+      "position": 18,
       "driver_code": "ALO",
       "driver_name": "Fernando Alonso",
       "team": "Aston Martin",
-      "points": 7,
-      "wins": 0
-    },
-    {
-      "position": 18,
-      "driver_code": "SAI",
-      "driver_name": "Carlos Sainz",
-      "team": "Williams",
       "points": 7,
       "wins": 0
     },
@@ -489,25 +489,25 @@
     {
       "position": 1,
       "team": "Mercedes",
-      "points": 652,
+      "points": 666,
       "wins": 12
     },
     {
       "position": 2,
       "team": "Ferrari",
-      "points": 510,
+      "points": 517,
       "wins": 2
     },
     {
       "position": 3,
       "team": "Red Bull",
-      "points": 415,
-      "wins": 3
+      "points": 440,
+      "wins": 4
     },
     {
       "position": 4,
       "team": "McLaren",
-      "points": 398,
+      "points": 431,
       "wins": 3
     },
     {
@@ -519,7 +519,7 @@
     {
       "position": 6,
       "team": "Alpine F1 Team",
-      "points": 69,
+      "points": 87,
       "wins": 0
     },
     {
@@ -537,7 +537,7 @@
     {
       "position": 9,
       "team": "Williams",
-      "points": 12,
+      "points": 16,
       "wins": 0
     },
     {
